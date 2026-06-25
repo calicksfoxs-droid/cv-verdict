@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: cv-verdict-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MAX_FILE_BYTES
+        value: "5242880"
+      - key: MAX_JOB_DESCRIPTION_CHARS
+        value: "12000"
+      - key: CORS_ORIGINS
+        value: "https://your-vercel-domain.vercel.app"
+      - key: AI_PROVIDER
+        value: ""
+      - key: AI_API_KEY
+        sync: false

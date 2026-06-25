@@ -139,6 +139,22 @@ label { font-weight: 750; }
 
 .hint { color: var(--muted); font-size: 14px; }
 
+.warning-note {
+  color: var(--court);
+  background: oklch(94% 0.035 82);
+  border: 1px solid oklch(72% 0.09 82);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.privacy-band {
+  border: 1px solid var(--line);
+  background: oklch(96% 0.012 236);
+  color: var(--court);
+  padding: 12px 13px;
+  font-size: 14px;
+}
+
 input[type="text"], textarea, select, input[type="file"] {
   width: 100%;
   border: 1px solid var(--line);
@@ -224,9 +240,22 @@ textarea { min-height: 118px; resize: vertical; }
   padding: 12px;
 }
 
+.processing-panel {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--ink);
+  background: var(--court);
+  color: var(--surface);
+  padding: 14px 16px;
+}
+
+.processing-panel span { color: oklch(90% 0.018 255); }
+
 .results-shell {
   padding: 34px 0 74px;
 }
+
+.loading-shell { display: grid; gap: 18px; align-content: start; max-width: 560px; }
 
 .result-layout {
   display: grid;
@@ -263,6 +292,52 @@ textarea { min-height: 118px; resize: vertical; }
   font-size: clamp(26px, 4vw, 40px);
   letter-spacing: -0.025em;
 }
+
+.evidence-mini-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.evidence-mini-rail span {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 7px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.fact-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.fact-list div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.fact-list dt { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.fact-list dd { margin: 0; }
+
+.criteria-grid { display: grid; gap: 8px; }
+
+.criterion-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.criterion-row span { color: var(--court); }
 
 .issue-list, .strength-list, .repair-list { display: grid; gap: 12px; padding: 0; list-style: none; }
 

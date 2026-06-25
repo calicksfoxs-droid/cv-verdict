@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from uuid import uuid4
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
 from app.models import AnalysisResponse, StatusResponse, ReportResponse, ReportLanguage, ReportType, ExperienceLevel, AnalysisStatus
 from app.services.pdf_text import extract_pdf_text, PdfReadError
@@ -10,18 +12,32 @@ from app.services.parser import parse_cv_text
 from app.services.evaluator import evaluate
 from app.services.report import generate_report
 
+load_dotenv()
+
 app = FastAPI(title="CV Verdict API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 STORE: dict[str, dict] = {}
-MAX_FILE_BYTES = 10 * 1024 * 1024
+MAX_FILE_BYTES = int(os.getenv("MAX_FILE_BYTES", str(5 * 1024 * 1024)))
+MAX_JOB_DESCRIPTION_CHARS = int(os.getenv("MAX_JOB_DESCRIPTION_CHARS", "12000"))
+
+
+def _is_pdf(upload: UploadFile) -> bool:
+    filename = (upload.filename or "").lower()
+    return upload.content_type == "application/pdf" or filename.endswith(".pdf")
+
+
+def _validate_scores(evaluation: dict) -> None:
+    scores = evaluation["scores"]
+    if scores["main_score"] > 60 or scores["internal_score"] > 40 or not 0 <= scores["final_score"] <= 100:
+        raise HTTPException(status_code=500, detail="INVALID_SCORE_TOTAL")
 
 
 @app.get("/health")
@@ -38,8 +54,10 @@ async def create_analysis(
     target_role: str | None = Form(None),
     job_description: str | None = Form(None),
 ) -> AnalysisResponse:
-    if cv_file.content_type != "application/pdf":
+    if not _is_pdf(cv_file):
         raise HTTPException(status_code=400, detail="INVALID_FILE_TYPE")
+    if job_description and len(job_description) > MAX_JOB_DESCRIPTION_CHARS:
+        raise HTTPException(status_code=400, detail="JOB_DESCRIPTION_TOO_LONG")
 
     raw = await cv_file.read()
     if len(raw) > MAX_FILE_BYTES:
@@ -49,9 +67,14 @@ async def create_analysis(
     STORE[request_id] = {"status": AnalysisStatus.extracting_text, "progress": 20}
 
     try:
+        STORE[request_id] = {"status": AnalysisStatus.extracting_text, "progress": 25}
         extracted = extract_pdf_text(raw)
+        STORE[request_id] = {"status": AnalysisStatus.parsing_cv, "progress": 50}
         parsed = parse_cv_text(extracted["text"])
+        STORE[request_id] = {"status": AnalysisStatus.evaluating, "progress": 72}
         evaluation = evaluate(parsed, target_role, job_description, language.value)
+        _validate_scores(evaluation)
+        STORE[request_id] = {"status": AnalysisStatus.generating_report, "progress": 90}
         report = generate_report(evaluation, parsed, language.value, report_type.value)
     except PdfReadError as exc:
         STORE[request_id] = {"status": AnalysisStatus.failed, "progress": 100, "error": str(exc)}
@@ -114,7 +137,11 @@ def get_report(request_id: str) -> ReportResponse:
             "filename": item.get("filename"),
             "target_role": item.get("target_role"),
             "job_description_available": item.get("job_description_available"),
+            "analysis_mode": evaluation["analysis_mode"],
+            "score_caps": evaluation["score_caps"],
+            "criteria": evaluation["criteria"],
             "extraction": item.get("extracted"),
+            "privacy": "Files are temporary. CVs are not used for training.",
             "note": "MVP deterministic evaluator; replace with AI Evaluation Engine in next phase.",
         },
     )

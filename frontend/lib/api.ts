@@ -18,7 +18,20 @@ export type Report = {
   issues: Array<Record<string, unknown>>;
   repair_plan: string[];
   ats: Record<string, unknown>;
-  metadata: Record<string, unknown>;
+  metadata: {
+    filename?: string;
+    target_role?: string | null;
+    job_description_available?: boolean;
+    analysis_mode?: "generic" | "role_only" | "targeted";
+    score_caps?: Array<Record<string, unknown>>;
+    criteria?: {
+      main?: Array<Record<string, unknown>>;
+      internal?: Array<Record<string, unknown>>;
+    };
+    extraction?: Record<string, unknown>;
+    privacy?: string;
+    note?: string;
+  };
 };
 
 export async function fetchReport(id: string): Promise<Report> {
