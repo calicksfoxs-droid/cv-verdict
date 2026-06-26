@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL } from "../lib/api";
+import { API_URL, getBackendError, getNetworkError } from "../lib/api";
 
 export default function HomePage() {
   const router = useRouter();
@@ -38,13 +38,12 @@ export default function HomePage() {
         body: data,
       });
       if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        throw new Error(detail.detail || "ANALYSIS_FAILED");
+        throw await getBackendError(response);
       }
       const payload = await response.json();
       router.push(`/results/${payload.request_id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ANALYSIS_FAILED");
+      setError(getNetworkError(err).code);
       setBusy(false);
     }
   }
@@ -59,6 +58,7 @@ export default function HomePage() {
     TOO_MANY_PAGES: isArabic ? "النسخة الحالية تقبل حتى 3 صفحات فقط." : "The current MVP accepts up to 3 pages only.",
     JOB_DESCRIPTION_TOO_LONG: isArabic ? "الوصف الوظيفي طويل جدًا للنسخة الحالية." : "The job description is too long for the current MVP.",
     REPORT_NOT_READY: isArabic ? "التقرير غير جاهز بعد." : "The report is not ready yet.",
+    BACKEND_UNAVAILABLE: isArabic ? "تعذر الاتصال بخادم التحليل. تحقق من إعدادات النشر." : "Could not reach the analysis server. Check deployment settings.",
     ANALYSIS_FAILED: isArabic ? "فشل التحليل. حاول مرة أخرى." : "Analysis failed. Try again.",
   };
 

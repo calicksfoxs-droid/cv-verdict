@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchReport, Report, API_URL } from "../../../lib/api";
+import { fetchReport, Report, API_URL, getNetworkError } from "../../../lib/api";
 
 export default function ResultPage({ params }: { params: { id: string } }) {
   const [report, setReport] = useState<Report | null>(null);
@@ -10,7 +10,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
   const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
-    fetchReport(params.id).then(setReport).catch((err) => setError(err.message));
+    fetchReport(params.id).then(setReport).catch((err) => setError(getNetworkError(err).code));
   }, [params.id]);
 
   async function deleteData() {
@@ -30,7 +30,8 @@ export default function ResultPage({ params }: { params: { id: string } }) {
   }
 
   if (error) {
-    return <main className="shell"><section className="results-shell"><div className="error">Report error: {error}</div></section></main>;
+    const copy = error === "BACKEND_UNAVAILABLE" ? "تعذر الاتصال بخادم التحليل. تحقق من إعدادات النشر." : `Report error: ${error}`;
+    return <main className="shell"><section className="results-shell"><div className="error">{copy}</div></section></main>;
   }
 
   if (!report) {

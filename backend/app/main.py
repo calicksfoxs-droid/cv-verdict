@@ -18,7 +18,14 @@ app = FastAPI(title="CV Verdict API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000,https://cv-verdict-lilac.vercel.app",
+        ).split(",")
+        if origin.strip()
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,7 +49,12 @@ def _validate_scores(evaluation: dict) -> None:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True}
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root() -> dict:
+    return {"service": "CV Verdict API", "status": "ok"}
 
 
 @app.post("/api/analysis", response_model=AnalysisResponse)

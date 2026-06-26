@@ -84,7 +84,20 @@ def test_health_check() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"ok": True}
+    assert response.json() == {"status": "ok"}
+
+
+def test_root_check() -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.json() == {"service": "CV Verdict API", "status": "ok"}
+
+
+def test_analysis_endpoint_is_post_only() -> None:
+    response = client.get("/api/analysis")
+
+    assert response.status_code == 405
 
 
 def test_post_analysis_with_text_pdf() -> None:

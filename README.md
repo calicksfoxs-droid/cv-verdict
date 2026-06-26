@@ -58,6 +58,12 @@ Backend health check:
 curl http://localhost:8000/health
 ```
 
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
 ## Frontend Setup
 
 Windows PowerShell:
@@ -91,7 +97,7 @@ Backend `backend/.env.example`:
 ```env
 MAX_FILE_BYTES=5242880
 MAX_JOB_DESCRIPTION_CHARS=12000
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://cv-verdict-lilac.vercel.app
 AI_PROVIDER=
 AI_API_KEY=
 ```
@@ -171,10 +177,27 @@ Production CORS pairing:
 
 ```env
 # Render backend
-CORS_ORIGINS=https://your-vercel-domain.vercel.app
+CORS_ORIGINS=https://cv-verdict-lilac.vercel.app
 
 # Vercel frontend
 NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
+```
+
+Render backend production checks:
+
+```text
+https://YOUR_RENDER_BACKEND.onrender.com/
+https://YOUR_RENDER_BACKEND.onrender.com/health
+```
+
+Expected responses:
+
+```json
+{"service":"CV Verdict API","status":"ok"}
+```
+
+```json
+{"status":"ok"}
 ```
 
 ## Completed

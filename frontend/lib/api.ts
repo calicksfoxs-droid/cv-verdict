@@ -1,5 +1,30 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+export class ApiError extends Error {
+  code: string;
+  status?: number;
+
+  constructor(code: string, status?: number) {
+    super(code);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+export async function getBackendError(response: Response): Promise<ApiError> {
+  const payload = await response.json().catch(() => null);
+  const detail = typeof payload?.detail === "string" ? payload.detail : `HTTP_${response.status}`;
+  return new ApiError(detail, response.status);
+}
+
+export function getNetworkError(error: unknown): ApiError {
+  if (error instanceof ApiError) return error;
+  if (error instanceof TypeError) return new ApiError("BACKEND_UNAVAILABLE");
+  if (error instanceof Error && error.message) return new ApiError(error.message);
+  return new ApiError("ANALYSIS_FAILED");
+}
+
 export type Report = {
   request_id: string;
   language: "ar" | "en";
@@ -35,7 +60,11 @@ export type Report = {
 };
 
 export async function fetchReport(id: string): Promise<Report> {
-  const response = await fetch(`${API_URL}/api/analysis/${id}/report`, { cache: "no-store" });
-  if (!response.ok) throw new Error("REPORT_NOT_READY");
-  return response.json();
+  try {
+    const response = await fetch(`${API_URL}/api/analysis/${id}/report`, { cache: "no-store" });
+    if (!response.ok) throw await getBackendError(response);
+    return response.json();
+  } catch (error) {
+    throw getNetworkError(error);
+  }
 }
