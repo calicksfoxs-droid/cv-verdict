@@ -1,5 +1,3 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 export class ApiError extends Error {
   code: string;
   status?: number;
@@ -61,7 +59,7 @@ export type Report = {
 
 export async function fetchReport(id: string): Promise<Report> {
   try {
-    const response = await fetch(`${API_URL}/api/analysis/${id}/report`, { cache: "no-store" });
+    const response = await fetch(`/api/analysis/${id}/report`, { cache: "no-store" });
     if (!response.ok) throw await getBackendError(response);
     return response.json();
   } catch (error) {

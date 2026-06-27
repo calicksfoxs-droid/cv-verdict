@@ -1,72 +1,37 @@
 # CV Verdict MVP
 
-CV Verdict is a bilingual Arabic/English public website for strict, evidence-based CV evaluation. A user uploads a text-based PDF CV, optionally adds a target role and job description, chooses report language/depth, and receives a deterministic MVP verdict from 100.
+CV Verdict is now a single Next.js application that runs fully on Vercel. Users upload a text-based PDF CV, choose Arabic or English, optionally add a target role/job description, and receive a deterministic evidence-based CV verdict from 100.
+
+## Current Deployment Shape
+
+- Production target: Vercel only.
+- Runtime app: `frontend/` Next.js.
+- API: Next.js Route Handlers under `frontend/app/api`.
+- No Render backend is required.
+- No CORS is required because frontend and API share the same domain.
+- The old `backend/` FastAPI code remains in the repository as legacy reference, but it is not required for local run or deployment.
 
 ## MVP Scope
 
-Included now:
+Included:
 - PDF upload only.
 - Text extraction from text-based PDFs.
 - Arabic and English reports.
 - Short and medium free reports.
-- Generic, role-only, and targeted analysis modes.
-- Deterministic fallback evaluator with score validation.
+- Analysis modes: `generic`, `role_only`, `targeted`.
+- Deterministic fallback evaluator.
+- Temporary in-memory result storage.
 - Delete analysis action.
-- Temporary in-memory storage for local MVP use.
 
-Excluded from MVP:
+Excluded:
 - Login.
 - Payments.
 - OCR.
-- Word upload.
-- CV editor.
+- Database.
+- Real AI engine.
 - Full paid report.
-- Persistent database storage.
 
-## Project Structure
-
-- `frontend/` — Next.js app.
-- `backend/` — FastAPI API.
-- `docs/` — product, architecture, testing, handoff, and design documentation.
-- `PRODUCT.md` — product source of truth.
-- `DESIGN.md` — interface direction and Evidence Rail signature element.
-
-## Backend Setup
-
-Windows PowerShell:
-
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
-```
-
-macOS/Linux:
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-Backend health check:
-
-```bash
-curl http://localhost:8000/health
-```
-
-Expected response:
-
-```json
-{"status":"ok"}
-```
-
-## Frontend Setup
-
-Windows PowerShell:
+## Local Run
 
 ```powershell
 cd frontend
@@ -74,56 +39,13 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-macOS/Linux:
+Open:
 
-```bash
-cd frontend
-npm install
-npm run dev
+```text
+http://localhost:3000
 ```
-
-Open `http://localhost:3000`.
-
-## Environment Variables
-
-Frontend `frontend/.env.example`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-Backend `backend/.env.example`:
-
-```env
-MAX_FILE_BYTES=5242880
-MAX_JOB_DESCRIPTION_CHARS=12000
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://cv-verdict-lilac.vercel.app
-AI_PROVIDER=
-AI_API_KEY=
-```
-
-No real API keys are required for the current MVP. If an AI API is absent, the backend uses the deterministic evaluator fallback.
-
-## API
-
-- `POST /api/analysis`
-- `GET /api/analysis/{request_id}/status`
-- `GET /api/analysis/{request_id}/report`
-- `DELETE /api/analysis/{request_id}`
-- `GET /health`
-
-## File Rules
-
-- PDF only.
-- Maximum size: `5MB` by default.
-- Maximum pages: `3`.
-- Text-based PDFs only.
-- Scanned PDFs return `NO_EXTRACTABLE_TEXT`; OCR is intentionally out of scope.
-- Password-protected and corrupted PDFs are rejected.
 
 ## Quality Commands
-
-Frontend:
 
 ```powershell
 cd frontend
@@ -131,99 +53,59 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Backend:
+## API Routes
 
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m compileall app
+- `POST /api/analysis`
+- `GET /api/analysis/[id]/status`
+- `GET /api/analysis/[id]/report`
+- `DELETE /api/analysis/[id]`
+
+## File Rules
+
+- PDF only.
+- Maximum size: `5MB`.
+- Maximum pages: `3`.
+- Text-based PDFs only.
+- Scanned PDFs return `NO_EXTRACTABLE_TEXT`; OCR is intentionally out of scope.
+
+## Environment Variables
+
+No environment variables are required for the deterministic MVP fallback.
+
+Optional future AI settings:
+
+```env
+AI_PROVIDER=
+OPENROUTER_API_KEY=
 ```
 
-Manual API smoke test:
+Do not add real AI keys until the AI evaluator is implemented.
 
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
-```
+## Vercel Deployment
 
-Then upload a text-based PDF through the frontend and verify report creation, error handling, and delete.
+Recommended settings:
+- Root Directory: `frontend`
+- Framework Preset: Next.js
+- Install Command: `npm install`
+- Build Command: `npm run build`
+
+There is no `NEXT_PUBLIC_API_URL`. The app calls its own API routes using relative URLs.
 
 ## Privacy
 
 - Files are temporary.
 - CVs are not used for training.
-- The current MVP stores analysis data only in memory.
 - The original PDF bytes are not persisted after request processing.
-- The parser does not store full CV text in the analysis object.
-- There is a user-facing delete action for the analysis result.
-
-## Deployment Plan
-
-Recommended MVP deployment:
-- Frontend: Vercel.
-- Backend: Render.
-- Backend runtime: Python 3.14 works with current dependencies; Python 3.12 is also acceptable.
-- Storage: keep temporary/local for MVP, then move to Supabase Storage/PostgreSQL when persistence is required.
-- Configure `NEXT_PUBLIC_API_URL` to the Render backend URL.
-- Configure backend `CORS_ORIGINS` to include the Vercel domain.
-
-Deployment files and notes:
-- `render.yaml` — Render backend service configuration.
-- `frontend/vercel.json` — Vercel frontend configuration.
-- `docs/deployment/RENDER_BACKEND.md` — backend deployment notes.
-- `docs/deployment/VERCEL_FRONTEND.md` — frontend deployment notes.
-
-Production CORS pairing:
-
-```env
-# Render backend
-CORS_ORIGINS=https://cv-verdict-lilac.vercel.app
-
-# Vercel frontend
-NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
-```
-
-Render backend production checks:
-
-```text
-https://YOUR_RENDER_BACKEND.onrender.com/
-https://YOUR_RENDER_BACKEND.onrender.com/health
-```
-
-Expected responses:
-
-```json
-{"service":"CV Verdict API","status":"ok"}
-```
-
-```json
-{"status":"ok"}
-```
-
-## Completed
-
-- Git repository initialized with `initial handoff import`.
-- Frontend dependencies installed.
-- Backend dependencies installed with Python 3.14-compatible versions.
-- Next.js upgraded to a patched major version that builds locally.
-- FastAPI endpoints implemented.
-- PDF validation and text extraction path present.
-- Deterministic scoring with `main_score <= 60`, `internal_score <= 40`, and `final_score <= 100`.
-- Analysis modes: `generic`, `role_only`, `targeted`.
-- Arabic/English short and medium reports.
-- Evidence Rail interface and delete result action.
-- Clear privacy copy in UI.
-- Automated backend tests for API, PDF validation, reports, languages, and analysis modes.
+- Full CV text is not printed in logs.
+- Results can be deleted manually.
 
 ## Known Issues
 
-- `npm audit` currently reports a residual moderate `postcss` advisory through the Next.js dependency chain. The suggested forced fix may downgrade or break the current Next setup, so it is intentionally not applied. Re-check after the Next dependency path publishes a safe patch.
-- Storage is in-memory for the current MVP. This is acceptable for a single-instance local/demo deployment but not for multi-instance production.
-- The evaluator is a deterministic fallback, not the final AI-assisted evaluation engine.
+- In-memory storage is acceptable for MVP demos, but serverless instances may not share state across cold starts. A database can be added later when persistence is in scope.
+- `npm audit` may report dependency advisories. Do not apply forced downgrades that break Next.js.
+- `pdfjs-dist` may print optional `canvas` polyfill warnings during build. The build still succeeds and text extraction works; do not add native `canvas` unless visual PDF rendering becomes in scope.
+- The evaluator is deterministic fallback logic, not the final AI-assisted evaluation engine.
 
-## Remaining Work
+## Legacy Backend
 
-- Replace deterministic fallback evaluator with a structured AI-assisted engine.
-- Add production persistence and expiry jobs if the MVP needs multi-instance deployment.
-- Add rate limiting before public launch.
-- Re-check residual `npm audit` PostCSS warning when Next publishes a patched dependency path.
+The `backend/` FastAPI implementation is no longer required for deployment. Keep it for reference until the Next.js-only MVP is stable, then decide whether to archive or delete it in a separate cleanup.

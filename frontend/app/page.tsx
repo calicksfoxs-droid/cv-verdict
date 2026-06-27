@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, getBackendError, getNetworkError } from "../lib/api";
+import { getBackendError, getNetworkError } from "../lib/api";
 
 export default function HomePage() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function HomePage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/analysis`, {
+      const response = await fetch("/api/analysis", {
         method: "POST",
         body: data,
       });
@@ -66,23 +66,32 @@ export default function HomePage() {
     <main className="shell" dir={isArabic ? "rtl" : "ltr"}>
       <header className="topbar">
         <div className="brand"><span className="brand-mark" /> CV Verdict</div>
-        <div className="lang-note">AR / EN · PDF audit · 5MB</div>
+        <div className="top-actions">
+          <button className="lang-switch" type="button" onClick={() => setLanguage(isArabic ? "en" : "ar")}>{isArabic ? "English" : "العربية"}</button>
+          <div className="lang-note">PDF · 5MB · Vercel</div>
+        </div>
       </header>
 
       <section className="hero">
         <div className="hero-copy">
-              <span className="verdict-label">{isArabic ? "فحص صارم، لا مجاملة" : "Strict audit, not a compliment"}</span>
-              <h1>{isArabic ? "سيرتك لا تحتاج مديحًا. تحتاج دليلًا." : "Your CV does not need praise. It needs evidence."}</h1>
+          <span className="verdict-label">{isArabic ? "فحص صارم، لا مجاملة" : "Strict audit, not a compliment"}</span>
+          <h1>{isArabic ? "سيرتك لا تحتاج مديحًا. تحتاج دليلًا." : "Your CV does not need praise. It needs evidence."}</h1>
           <p className="lede">
             {isArabic
               ? "ارفع سيرتك، اختر اللغة ونوع التقرير، واحصل على حكم واضح: الدرجة، المخاطر، ما يراه مسؤول التوظيف، وأول ما يجب إصلاحه."
               : "Upload your CV, choose language and report depth, then get a clear verdict: score, risks, recruiter view, and the first fixes that matter."}
           </p>
 
-          <div className="action-panel">
+          <div className="trust-row" aria-label="Product boundaries">
+            <span>{isArabic ? "بدون حساب" : "No account"}</span>
+            <span>{isArabic ? "بدون OCR" : "No OCR"}</span>
+            <span>{isArabic ? "لا تدريب على CV" : "No CV training"}</span>
+          </div>
+
+          <div className="action-panel" id="analysis-form">
             <div className="panel-head">
               <span>{isArabic ? "طلب تحليل جديد" : "New analysis request"}</span>
-              <span>{isArabic ? "بدون حساب أو تدريب" : "No account or training"}</span>
+              <span>{isArabic ? "يعمل من نفس الموقع" : "Runs on this site"}</span>
             </div>
 
             <form className="upload-form" onSubmit={submit}>
@@ -94,10 +103,17 @@ export default function HomePage() {
 
               <div className="field">
                 <label htmlFor="cv_file">{isArabic ? "ملف السيرة PDF" : "CV PDF file"}</label>
-                <input id="cv_file" name="cv_file" type="file" accept="application/pdf" required />
-                <span className="hint">{isArabic ? "PDF نصي فقط، حتى 5MB و3 صفحات. لا ندعم الصور أو OCR في النسخة الأولى." : "Text-based PDF only, up to 5MB and 3 pages. Scans and OCR are not supported in the first MVP."}</span>
+                <div className="upload-drop">
+                  <input id="cv_file" name="cv_file" type="file" accept="application/pdf" required />
+                  <div className="upload-copy">
+                    <strong>{isArabic ? "ارفع ملف PDF نصي" : "Upload a text-based PDF"}</strong>
+                    <span>{isArabic ? "اسحب الملف هنا أو اختره من جهازك. الحد الأقصى 5MB و3 صفحات." : "Drop the file here or choose it from your device. Max 5MB and 3 pages."}</span>
+                  </div>
+                </div>
+                <span className="hint">{isArabic ? "لو كان الملف صورة ممسوحة ضوئيًا سنطلب نسخة PDF نصية، لأن OCR خارج نطاق النسخة الحالية." : "If the file is scanned, you will be asked for a text-based PDF because OCR is out of scope."}</span>
               </div>
 
+              <div className="form-section-title">{isArabic ? "خيارات التقرير" : "Report options"}</div>
               <div className="form-grid">
                 <div className="field">
                   <label htmlFor="language">{isArabic ? "لغة التقرير" : "Report language"}</label>
@@ -128,6 +144,7 @@ export default function HomePage() {
                 </div>
               </div>
 
+              <div className="form-section-title">{isArabic ? "استهداف الوظيفة" : "Role targeting"}</div>
               <div className="field">
                 <label htmlFor="target_role">{isArabic ? "الوظيفة المستهدفة — اختيارية" : "Target role — optional"}</label>
                 <input id="target_role" name="target_role" type="text" value={targetRole} onChange={(event) => setTargetRole(event.target.value)} placeholder={isArabic ? "مثال: AI Automation Intern" : "Example: AI Automation Intern"} />
@@ -157,7 +174,7 @@ export default function HomePage() {
 
         <aside className="evidence-rail" aria-label="Evidence rail">
           <div className="audit-strip">
-            <span>{isArabic ? "ما الذي يميزنا؟" : "What makes it different?"}</span>
+            <span>{isArabic ? "Evidence Rail" : "Evidence Rail"}</span>
             <strong>{isArabic ? "الحكم مبني على دليل." : "The verdict follows evidence."}</strong>
           </div>
           <div className="rail-item"><strong>{isArabic ? "لا نقاط بلا سبب" : "No score without reason"}</strong><span>{isArabic ? "كل خصم أو إضافة يجب أن يستند لما يظهر في السيرة." : "Each gain or loss must come from visible CV evidence."}</span></div>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "next": "^16.2.9",
+    "pdfjs-dist": "^3.11.174",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },

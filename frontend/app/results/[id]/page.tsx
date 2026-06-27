@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchReport, Report, API_URL, getNetworkError } from "../../../lib/api";
+import { fetchReport, Report, getNetworkError } from "../../../lib/api";
 
 export default function ResultPage({ params }: { params: { id: string } }) {
   const [report, setReport] = useState<Report | null>(null);
@@ -14,7 +14,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
   async function deleteData() {
-    await fetch(`${API_URL}/api/analysis/${params.id}`, { method: "DELETE" });
+    await fetch(`/api/analysis/${params.id}`, { method: "DELETE" });
     setDeleted(true);
   }
 
