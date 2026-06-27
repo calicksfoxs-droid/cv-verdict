@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchReport, Report, getNetworkError } from "../../../lib/api";
+import { ApiError, fetchReport, Report, getNetworkError } from "../../../lib/api";
 
 export default function ResultPage({ params }: { params: { id: string } }) {
   const [report, setReport] = useState<Report | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
-    fetchReport(params.id).then(setReport).catch((err) => setError(getNetworkError(err).code));
+    fetchReport(params.id).then(setReport).catch((err) => setError(getNetworkError(err, `/api/analysis/${params.id}/report`)));
   }, [params.id]);
 
   async function deleteData() {
@@ -30,8 +30,22 @@ export default function ResultPage({ params }: { params: { id: string } }) {
   }
 
   if (error) {
-    const copy = error === "BACKEND_UNAVAILABLE" ? "تعذر الاتصال بخادم التحليل. تحقق من إعدادات النشر." : `Report error: ${error}`;
-    return <main className="shell"><section className="results-shell"><div className="error">{copy}</div></section></main>;
+    const copy = error.code === "BACKEND_UNAVAILABLE" ? "تعذر الاتصال بخادم التحليل. تحقق من إعدادات النشر." : `Report error: ${error.code}`;
+    return (
+      <main className="shell">
+        <section className="results-shell">
+          <div className="error">
+            <div>{copy}</div>
+            {(error.url || error.status || error.body) && (
+              <details>
+                <summary>Diagnostic details</summary>
+                <pre>{JSON.stringify({ url: error.url, status: error.status, body: error.body }, null, 2)}</pre>
+              </details>
+            )}
+          </div>
+        </section>
+      </main>
+    );
   }
 
   if (!report) {

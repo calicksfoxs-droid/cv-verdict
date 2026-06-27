@@ -2,12 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBackendError, getNetworkError } from "../lib/api";
+import { ApiError, getBackendError, getNetworkError } from "../lib/api";
 
 export default function HomePage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const [language, setLanguage] = useState<"ar" | "en">("ar");
   const [targetRole, setTargetRole] = useState("");
 
@@ -21,19 +21,21 @@ export default function HomePage() {
     const file = data.get("cv_file");
 
     if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".pdf")) {
-      setError("INVALID_FILE_TYPE");
+      setError(new ApiError("INVALID_FILE_TYPE"));
       setBusy(false);
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("FILE_TOO_LARGE");
+      setError(new ApiError("FILE_TOO_LARGE"));
       setBusy(false);
       return;
     }
 
+    const url = "/api/analysis";
+
     try {
-      const response = await fetch("/api/analysis", {
+      const response = await fetch(url, {
         method: "POST",
         body: data,
       });
@@ -43,7 +45,7 @@ export default function HomePage() {
       const payload = await response.json();
       router.push(`/results/${payload.request_id}`);
     } catch (err) {
-      setError(getNetworkError(err).code);
+      setError(getNetworkError(err, url));
       setBusy(false);
     }
   }
@@ -156,7 +158,17 @@ export default function HomePage() {
                 <textarea id="job_description" name="job_description" placeholder={isArabic ? "الصق الوصف الوظيفي هنا إن وجد." : "Paste the job description here if available."} />
               </div>
 
-              {error && <div className="error">{errorCopy[error] || errorCopy.ANALYSIS_FAILED}</div>}
+              {error && (
+                <div className="error">
+                  <div>{errorCopy[error.code] || errorCopy.ANALYSIS_FAILED}</div>
+                  {(error.url || error.status || error.body) && (
+                    <details>
+                      <summary>{isArabic ? "تفاصيل التشخيص" : "Diagnostic details"}</summary>
+                      <pre>{JSON.stringify({ url: error.url, status: error.status, body: error.body }, null, 2)}</pre>
+                    </details>
+                  )}
+                </div>
+              )}
 
               {busy && (
                 <div className="processing-panel" aria-live="polite">
